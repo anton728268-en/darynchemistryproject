@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Химик — Использование нейросетей для моделирования и прогнозирования химических реакций</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #060913;
+    --card-bg: rgba(15, 23, 42, 0.7);
+    --border-color: rgba(0, 255, 200, 0.15);
+    --accent-cyan: #00ffc8;
+    --accent-blue: #00b3ff;
+    --accent-purple: #b400ff;
+    --accent-amber: #ffb703;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-main);
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+  
+  .font-mono-chem {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Анимированный деграде-фон */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    background: 
+      radial-gradient(circle at 10% 20%, rgba(0, 255, 200, 0.08), transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(180, 0, 255, 0.08), transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(0, 179, 255, 0.05), transparent 60%);
+  }
+
+  /* Неоновый нео-брутализм / стеклянный эффект */
+  .glass-card {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    border-color: rgba(0, 255, 200, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 255, 200, 0.12);
+  }
+
+  /* Текст с неоновым градиентом */
+  .glow-text {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Аккордеон custom styling */
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary .acc-icon { transform: rotate(180deg); }
+
+  /* Кастомный скроллбар */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #060913; }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 255, 200, 0.25); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 200, 0.5); }
+  
+  /* Анимация пульсации */
+  @keyframes pulseGlow {
+    0%, 100% { filter: drop-shadow(0 0 15px rgba(0, 255, 200, 0.3)); }
+    50% { filter: drop-shadow(0 0 30px rgba(180, 0, 255, 0.5)); }
+  }
+  .hero-glow { animation: pulseGlow 5s infinite ease-in-out; }
+</style>
+</head>
+<body class="relative min-h-screen">
+
+<!-- Фоновый Canvas и Гradients -->
+<div class="bg-glow"></div>
+<canvas id="particlesCanvas" class="fixed inset-0 pointer-events-none z-[-5]"></canvas>
+
+<!-- Прогресс скролла -->
+<div id="progressBar" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 z-50 transition-all duration-150 shadow-[0_0_10px_#00ffc8]" style="width: 0%;"></div>
+
+<!-- Навигация -->
+<nav class="sticky top-0 z-40 glass-card border-b border-slate-800/80 px-4 py-3">
+  <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <a href="#hero" class="flex items-center gap-2 font-bold text-xl tracking-wider text-white">
+      <span class="text-2xl">🧪</span>
+      <span class="glow-text font-black">AI-ХИМИК</span>
+    </a>
+    <ul class="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-slate-300">
+      <li><a href="#intro" class="px-3 py-1.5 rounded-full hover:bg-cyan-500/10 hover:text-cyan-400 transition-all">Введение</a></li>
+      <li><a href="#ch1" class="px-3 py-1.5 rounded-full hover:bg-cyan-500/10 hover:text-cyan-400 transition-all">Глава 1. Теория</a></li>
+      <li><a href="#ch2" class="px-3 py-1.5 rounded-full hover:bg-cyan-500/10 hover:text-cyan-400 transition-all">Глава 2. Опыты</a></li>
+      <li><a href="#ch3" class="px-3 py-1.5 rounded-full hover:bg-cyan-500/10 hover:text-cyan-400 transition-all">Глава 3. Анализ</a></li>
+      <li><a href="#ch4" class="px-3 py-1.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-all">🚀 AI-Помощник</a></li>
+      <li><a href="#apps" class="px-3 py-1.5 rounded-full hover:bg-cyan-500/10 hover:text-cyan-400 transition-all">Приложения</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<header id="hero" class="relative pt-16 pb-20 px-4 text-center max-w-5xl mx-auto">
+  <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card text-xs font-semibold text-cyan-400 mb-6 border border-cyan-500/30">
+    <span class="animate-pulse">●</span> Научно-исследовательский проект по химии и ИИ
+  </div>
+  
+  <h1 class="text-4xl sm:text-6xl font-black tracking-tight mb-6 hero-glow leading-tight">
+    Использование нейросетей для моделирования и прогнозирования химических реакций
+  </h1>
+  
+  <p class="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto mb-8 font-light leading-relaxed">
+    Оценка точности генеративных моделей искусственного интеллекта (ChatGPT, Gemini, Claude), расчёт авторского <strong class="text-cyan-400 font-semibold">«Индекса химической достоверности (ИХД)»</strong> и создание цифрового ассистента.
+  </p>
+
+  <!-- Девиз проекта -->
+  <div class="glass-card p-6 rounded-2xl max-w-2xl mx-auto mb-10 border-l-4 border-l-cyan-400">
+    <div class="text-xs uppercase tracking-widest text-slate-400 mb-1 font-semibold">Главный постулат исследования</div>
+    <div class="text-xl sm:text-2xl font-extrabold text-cyan-300">
+      «Нейросеть предлагает — ученик проверяет!»
+    </div>
+  </div>
+
+  <div class="flex flex-wrap justify-center gap-3">
+    <a href="#ch4" class="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-slate-950 hover:shadow-[0_0_25px_rgba(0,255,200,0.5)] transition-all flex items-center gap-2">
+      ⚡ Запустить AI-Помощник
+    </a>
+    <a href="#ch2" class="px-6 py-3 rounded-xl glass-card text-white hover:bg-slate-800 transition-all flex items-center gap-2">
+      📊 Результаты 20 реакций
+    </a>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 space-y-24 pb-24">
+
+  <!-- ==================== ВВЕДЕНИЕ ==================== -->
+  <section id="intro" class="scroll-mt-24 space-y-6">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">📖</span>
+      <h2 class="text-3xl font-bold text-white">Введение</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-cyan-400">
+        <h3 class="text-lg font-bold text-cyan-400 flex items-center gap-2">🔥 Актуальность темы</h3>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Современная химия и фармацевтика стремительно внедряют алгоритмы машинного обучения для ускорения разработки медикаментов и материалов. Однако школьники и студенты часто доверяют ответам нейросетей "на слово", принимая "галлюцинации" ИИ за научные факты. Исследование актуально для формирования навыков критического химического мышления в эпоху генеративного ИИ.
+        </p>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-purple-500">
+        <h3 class="text-lg font-bold text-purple-400 flex items-center gap-2">❓ Проблема исследования</h3>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Высокая частота ошибок генеративных языковых моделей (LLM) при расстановке коэффициентов в окислительно-восстановительных реакциях (ОВР), игнорирование условий (температура, катализатор, концентрация) и предсказание несуществующих продуктов реакций органической химии.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="glass-card p-5 rounded-xl">
+        <div class="text-xs text-slate-400 uppercase font-semibold">Цель проекта</div>
+        <div class="text-slate-200 font-medium text-sm mt-2">Количественно оценить точность нейросетей при прогнозировании химических реакций и разработать валидирующий модуль.</div>
+      </div>
+      <div class="glass-card p-5 rounded-xl">
+        <div class="text-xs text-slate-400 uppercase font-semibold">Объект исследования</div>
+        <div class="text-slate-200 font-medium text-sm mt-2">Генеративные языковые модели (LLM): ChatGPT (GPT-4o), Google Gemini, Claude 3.5 Sonnet.</div>
+      </div>
+      <div class="glass-card p-5 rounded-xl">
+        <div class="text-xs text-slate-400 uppercase font-semibold">Предмет исследования</div>
+        <div class="text-slate-200 font-medium text-sm mt-2">Достоверность прогнозов продуктов, коэффициентов и условий химических реакций 8-11 классов.</div>
+      </div>
+    </div>
+
+    <!-- Задачи и Гипотеза в аккордеоне -->
+    <details class="glass-card rounded-2xl overflow-hidden group">
+      <summary class="p-5 cursor-pointer flex justify-between items-center font-bold text-slate-200 hover:bg-slate-800/50">
+        <span class="flex items-center gap-2">🎯 Задачи исследования, гипотеза и методы</span>
+        <span class="acc-icon transition-transform text-cyan-400">▼</span>
+      </summary>
+      <div class="p-6 pt-2 border-t border-slate-800/80 space-y-4 text-sm text-slate-300">
+        <div>
+          <h4 class="font-semibold text-cyan-300 mb-2">Задачи:</h4>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Сформировать выборку из 20 химических реакций (неорганика и органика).</li>
+            <li>Разработать единый стандартизированный промпт (запрос) для тестирования ИИ.</li>
+            <li>Разработать 5-балльную шкалу оценки достоверности (критерии ИХД).</li>
+            <li>Провести автоматический и экспертный анализ ответов моделей.</li>
+            <li>Создать интерактивный веб-инструмент «AI-Химик».</li>
+          </ul>
+        </div>
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+          <strong>💡 Гипотеза:</strong> Нейросети правильно прогнозируют продукты стандартных реакций ионного обмена, но допускают до 40% ошибок в реакциях органической химии с вариативными условиями (температура, катализаторы).
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ==================== ГЛАВА 1 ==================== -->
+  <section id="ch1" class="scroll-mt-24 space-y-6">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">📘</span>
+      <h2 class="text-3xl font-bold text-white">Глава 1. Теоретические основы</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <div class="text-cyan-400 font-bold text-lg">1.1. Как ИИ видят химию</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Языковые модели не "понимают" химические законы и квантовую механику напрямую. Они работают с молекулами как со строковыми представлениями (SMILES, InChI, химические формулы) и прогнозируют наиболее вероятные токены-продолжения на основе миллиардов статей.
+        </p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <div class="text-purple-400 font-bold text-lg">1.2. Причины "галлюцинаций"</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Ошибки возникают из-за разрыва логики: ИИ может "помнить" реакцию при одной температуре, но экстраполировать её на другую без учета смены механизма (например, дегидратация ethanol при 140°C vs 170°C).
+        </p>
+      </div>
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <div class="text-blue-400 font-bold text-lg">1.3. Специфика органики</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          В органической химии правила Марковникова, Зайцева, стерические препятствия и катализаторы радикально меняют конечный продукт, что является главным тестом для ИИ.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ГЛАВА 2 ==================== -->
+  <section id="ch2" class="scroll-mt-24 space-y-8">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🧪</span>
+        <div>
+          <h2 class="text-3xl font-bold text-white">Глава 2. Практическое исследование</h2>
+          <p class="text-xs text-slate-400">Сравнительный анализ ChatGPT, Gemini и Claude по 20 химическим реакциям</p>
+        </div>
+      </div>
+      <span class="text-xs px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+        База: 20 реакций / 100 баллов макс
+      </span>
+    </div>
+
+    <!-- ШАБЛОН ПРОМПТА И СЕТКА ОЦЕНКИ -->
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="glass-card p-5 rounded-xl space-y-2">
+        <h4 class="text-xs uppercase font-bold text-slate-400">Стандартизированный Промпт (Запрос к ИИ):</h4>
+        <div class="font-mono-chem text-xs bg-slate-950 p-4 rounded-lg text-emerald-400 border border-slate-800">
+          "Спрогнозируй химическую реакцию между [Вещество A] и [Вещество B] при [Условия]. Укажи: 1) Продукты реакции, 2) Полное уравновешенное уравнение с коэффициентами, 3) Тип реакции, 4) Точные условия проведения, 5) Визуальные признаки реакции (осадок, газ, цвет)."
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-xl space-y-2">
+        <h4 class="text-xs uppercase font-bold text-slate-400">Сетка оценки (5 критериев = 5 баллов на реакцию):</h4>
+        <ul class="text-xs space-y-1.5 text-slate-300">
+          <li class="flex justify-between border-b border-slate-800 pb-1"><span>1. Правильность продуктов реакции</span><strong class="text-cyan-400">1 балл</strong></li>
+          <li class="flex justify-between border-b border-slate-800 pb-1"><span>2. Правильность химических формул</span><strong class="text-cyan-400">1 балл</strong></li>
+          <li class="flex justify-between border-b border-slate-800 pb-1"><span>3. Расстановка коэффициентов</span><strong class="text-cyan-400">1 балл</strong></li>
+          <li class="flex justify-between border-b border-slate-800 pb-1"><span>4. Определение типа реакции</span><strong class="text-cyan-400">1 балл</strong></li>
+          <li class="flex justify-between border-b border-slate-800 pb-1"><span>5. Указание необходимых условий</span><strong class="text-cyan-400">1 балл</strong></li>
+        </ul>
+        <p class="text-[11px] text-slate-400 pt-2">Визуальные признаки (осадок, газ, изменение цвета) фиксируются отдельно как дополнительное наблюдение и не входят в базовый расчёт ИХД.</p>
+      </div>
+    </div>
+
+    <!-- ТАБЛИЦА 20 РЕАКЦИЙ -->
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <div class="p-4 bg-slate-900/80 border-b border-slate-800 flex flex-wrap justify-between items-center gap-2">
+        <h3 class="font-bold text-white text-sm">Экспериментальная таблица (20 контрольных реакций)</h3>
+        <input type="text" id="tableSearch" placeholder="Поиск по реакции или веществу..." class="bg-slate-950 border border-slate-700 text-xs text-white px-3 py-1.5 rounded-lg focus:outline-none focus:border-cyan-400 w-64">
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-950/80 text-cyan-400 font-bold border-b border-slate-800">
+              <th class="p-3">№</th>
+              <th class="p-3">Реагенты & Условия</th>
+              <th class="p-3">Эталонное уравнение</th>
+              <th class="p-3">Тип реакции</th>
+              <th class="p-3 text-center">ChatGPT (GPT-4o)</th>
+              <th class="p-3 text-center">Gemini Flash</th>
+              <th class="p-3 text-center">Claude 3.5</th>
+            </tr>
+          </thead>
+          <tbody id="reactionsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <!-- Динамически заполняется через JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- СТАТИСТИКА И ДИАГРАММЫ ПО МОДЕЛЯМ -->
+    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">Важно: проценты ниже пересчитаны по баллам, уже внесённым в таблицу (20 реакций × 5 баллов). Это не подтверждение реального тестирования моделей. Для научного вывода необходимо приложить исходные ответы нейросетей и экспертные протоколы оценивания.</div>
+    <div class="grid sm:grid-cols-3 gap-6">
+      <div class="glass-card p-6 rounded-2xl text-center space-y-2 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full"></div>
+        <div class="text-xs text-slate-400 font-semibold uppercase">Claude 3.5 Sonnet</div>
+        <div class="text-4xl font-black text-emerald-400 font-mono-chem">93.0%</div>
+        <div class="text-xs text-slate-300">93 / 100 баллов по внесённым оценкам</div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-3">
+          <div class="bg-emerald-400 h-full" style="width: 93%;"></div>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-center space-y-2 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-cyan-500/10 rounded-bl-full"></div>
+        <div class="text-xs text-slate-400 font-semibold uppercase">ChatGPT (GPT-4o)</div>
+        <div class="text-4xl font-black text-cyan-400 font-mono-chem">90.0%</div>
+        <div class="text-xs text-slate-300">90 / 100 баллов по внесённым оценкам</div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-3">
+          <div class="bg-cyan-400 h-full" style="width: 90%;"></div>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl text-center space-y-2 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-bl-full"></div>
+        <div class="text-xs text-slate-400 font-semibold uppercase">Google Gemini</div>
+        <div class="text-4xl font-black text-purple-400 font-mono-chem">83.0%</div>
+        <div class="text-xs text-slate-300">83 / 100 баллов по внесённым оценкам</div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-3">
+          <div class="bg-purple-400 h-full" style="width: 83%;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ГЛАВА 3 ==================== -->
+  <section id="ch3" class="scroll-mt-24 space-y-6">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">📊</span>
+      <h2 class="text-3xl font-bold text-white">Глава 3. Анализ результатов и Инструкция безопасности</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <h3 class="text-lg font-bold text-emerald-400">Где ИИ наиболее точен</h3>
+        <ul class="text-xs space-y-2 text-slate-300 list-disc list-inside">
+          <li>Типовые реакции ионного обмена (осаждение salts, нейтрализация).</li>
+          <li>Полное горение простых углеводородов (алканы, алкены).</li>
+          <li>Качественные реакции со стандартным изменением цвета (бромная вода, KMnO4).</li>
+        </ul>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <h3 class="text-lg font-bold text-rose-400">Типичные ошибки нейросетей</h3>
+        <ul class="text-xs space-y-2 text-slate-300 list-disc list-inside">
+          <li>Ошибки в коэффициентах ОВР с жесткими окислителями (KMnO4 в разной среде).</li>
+          <li>Смещение реакции дегидратации спиртов (межмолекулярная vs внутримолекулярная).</li>
+          <li>Игнорирование изомеров при бромировании/хлорировании алканов.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 10 ПРАВИЛ БЕЗОПАСНОГО ИСПОЛЬЗОВАНИЯ ИИ -->
+    <div class="glass-card p-6 rounded-2xl border-l-4 border-amber-400 space-y-4">
+      <h3 class="text-xl font-bold text-amber-300 flex items-center gap-2">
+        <span>🛡️</span> 10 правил безопасного использования ИИ в химии
+      </h3>
+      <div class="grid sm:grid-cols-2 gap-3 text-xs text-slate-300">
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>1. Проверяй коэффициенты:</strong> Всегда считай атомы слева и справа. ИИ часто путает индексы.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>2. Уточняй условия:</strong> Указывай температуру, фазовое состояние и катализатор в промпте.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>3. Проверяй растворимость:</strong> Сверяй выпадение осадков по официальным таблицам.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>4. Органика вариативна:</strong> Помни про правила Марковникова и Зайцева при реакциях присоединения и элиминирования.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>5. Не проводи опыты вслепую:</strong> Никогда не смешивай вещества по рекомендации ИИ без учителя!</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>6. Помни про среду:</strong> ОВР с KMnO4/K2Cr2O7 критически зависят от pH (кислая/нейтральная/щелочная).</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>7. Сверяй с учебником:</strong> ИИ может выдать научный синтез, не входящий в школьную программу.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>8. Вводи формулы правильно:</strong> Используй скобки и явные индексы (например, CH3COOH).</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>9. Анализируй изомеры:</strong> Переспрашивай ИИ о вероятных побочных продуктах.</div>
+        <div class="p-3 bg-slate-900/60 rounded-xl"><strong>10. Девиз:</strong> «Нейросеть предлагает — ученик проверяет!».</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ГЛАВА 4: ИНТЕРАКТИВНЫЙ ПОМОЩНИК ==================== -->
+  <section id="ch4" class="scroll-mt-24 space-y-8">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">🛠️</span>
+      <div>
+        <h2 class="text-3xl font-bold text-white">Глава 4. Цифровой помощник «AI-Химик»</h2>
+        <p class="text-xs text-slate-400">Интерактивный модуль симуляции, валидации и тренажера</p>
+      </div>
+    </div>
+
+    <!-- ТАБЫ ДЛЯ ПОМОЩНИКА -->
+    <div class="flex border-b border-slate-800 gap-2">
+      <button onclick="switchTab('tab-predict')" id="btn-tab-predict" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-cyan-500/20 text-cyan-400 border-t border-x border-cyan-500/40">
+        🧪 1. Предскажи реакцию & ИХД
+      </button>
+      <button onclick="switchTab('tab-trainer')" id="btn-tab-trainer" class="px-5 py-2.5 rounded-t-xl font-bold text-sm text-slate-400 hover:text-white transition-all">
+        🎯 2. Тренажёр знаний
+      </button>
+      <button onclick="switchTab('tab-lab')" id="btn-tab-lab" class="px-5 py-2.5 rounded-t-xl font-bold text-sm text-slate-400 hover:text-white transition-all">
+        🔬 3. Виртуальная лаборатория
+      </button>
+    </div>
+
+    <!-- ВКЛАДКА 1: ПРЕДСКАЖИ РЕАКЦИЮ & ИХД -->
+    <div id="tab-predict" class="glass-card p-6 rounded-2xl space-y-6">
+      <div class="grid md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Выбери готовый реактив или введи свой:</label>
+          <select id="presetSelect" onchange="loadPresetReaction()" class="w-full bg-slate-950 border border-slate-800 text-xs text-cyan-300 p-2.5 rounded-xl focus:border-cyan-400">
+            <option value="">-- Быстрый выбор реакции --</option>
+            <option value="C2H4+H2O">C2H4 + H2O (Гидратация этилена)</option>
+            <option value="CH3COOH+C2H5OH">CH3COOH + C2H5OH (Этерификация)</option>
+            <option value="C2H5OH_170">C2H5OH (Дегидратация >140°C)</option>
+            <option value="CH4+Cl2">CH4 + Cl2 (Хлорирование)</option>
+            <option value="Fe+CuSO4">Fe + CuSO4 (Замещение)</option>
+            <option value="NaOH+HCl">NaOH + HCl (Нейтрализация)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Исходные вещества (Реагенты):</label>
+          <input type="text" id="inputReagents" placeholder="Например: C2H4 + H2O" class="w-full bg-slate-950 border border-slate-800 text-xs text-white p-2.5 rounded-xl font-mono-chem focus:border-cyan-400">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Условия (t°, p, катализатор):</label>
+          <input type="text" id="inputConditions" placeholder="Например: H3PO4, 300°C" class="w-full bg-slate-950 border border-slate-800 text-xs text-white p-2.5 rounded-xl font-mono-chem focus:border-cyan-400">
+        </div>
+      </div>
+
+      <button onclick="analyzeReaction()" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-slate-950 hover:shadow-[0_0_20px_rgba(0,255,200,0.4)] transition-all">
+        ⚡ Показать справочный пример реакции
+      </button>
+      <p class="text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">В этой HTML-версии нет подключения к ChatGPT, Gemini или Claude. Произвольный ввод не запускает нейросеть и не должен получать вымышленный прогноз. Ответ реальной модели оцените вручную по пяти критериям в калькуляторе ИХД.</p>
+
+      <!-- РЕЗУЛЬТАТ АНАЛИЗА AI -->
+      <div id="predictResult" class="hidden space-y-4 pt-4 border-t border-slate-800">
+        <div class="flex flex-wrap justify-between items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div>
+            <div class="text-xs text-slate-400">Справочное уравнение для проверки:</div>
+            <div id="resEquation" class="text-lg font-bold font-mono-chem text-cyan-300">---</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-400">ИХД:</div>
+            <div id="resIHD" class="text-sm font-bold text-amber-300">Рассчитывается отдельно</div>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-4 text-xs">
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block mb-1 font-semibold">Тип реакции:</span>
+            <span id="resType" class="text-slate-200 font-medium">---</span>
+          </div>
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block mb-1 font-semibold">Необходимые условия:</span>
+            <span id="resCond" class="text-slate-200 font-medium">---</span>
+          </div>
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+            <span class="text-slate-400 block mb-1 font-semibold">Визуальные признаки:</span>
+            <span id="resVisual" class="text-slate-200 font-medium">---</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-cyan-950/40 border border-cyan-800/50 text-xs space-y-1">
+          <div class="font-bold text-cyan-300">💡 Научно-химическое объяснение эксперта:</div>
+          <div id="resExplain" class="text-slate-300 leading-relaxed">---</div>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-xl space-y-4 border border-cyan-500/20">
+        <div>
+          <h3 class="font-bold text-white">Калькулятор индекса химической достоверности (ИХД)</h3>
+          <p class="text-xs text-slate-400 mt-1">Отметьте критерии, которым полностью соответствует ответ нейросети. Каждый критерий — 1 балл.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 text-xs text-slate-200">
+          <label class="flex items-start gap-2 p-3 rounded-lg bg-slate-900"><input class="ihd-check mt-0.5 accent-cyan-400" type="checkbox" onchange="calculateIHD()"><span>1. Правильно определены продукты реакции</span></label>
+          <label class="flex items-start gap-2 p-3 rounded-lg bg-slate-900"><input class="ihd-check mt-0.5 accent-cyan-400" type="checkbox" onchange="calculateIHD()"><span>2. Правильно записаны формулы веществ</span></label>
+          <label class="flex items-start gap-2 p-3 rounded-lg bg-slate-900"><input class="ihd-check mt-0.5 accent-cyan-400" type="checkbox" onchange="calculateIHD()"><span>3. Коэффициенты расставлены верно</span></label>
+          <label class="flex items-start gap-2 p-3 rounded-lg bg-slate-900"><input class="ihd-check mt-0.5 accent-cyan-400" type="checkbox" onchange="calculateIHD()"><span>4. Верно определён тип реакции</span></label>
+          <label class="flex items-start gap-2 p-3 rounded-lg bg-slate-900"><input class="ihd-check mt-0.5 accent-cyan-400" type="checkbox" onchange="calculateIHD()"><span>5. Указаны необходимые условия реакции</span></label>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div><div class="text-xs text-slate-400">Результат оценки</div><div id="ihdFraction" class="font-mono-chem text-sm text-slate-200">0 из 5 баллов</div></div>
+          <div id="ihdPercent" class="text-3xl font-black font-mono-chem text-cyan-300">0%</div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="resetIHD()" class="px-4 py-2 rounded-lg border border-slate-700 text-xs text-slate-300 hover:bg-slate-800">Сбросить оценку</button>
+          <button type="button" onclick="copyIHDResult()" class="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-xs text-cyan-200 hover:bg-cyan-500/30">Скопировать результат</button>
+        </div>
+        <p class="text-[11px] text-slate-500">Формула: ИХД = (количество набранных баллов / 5) × 100%. Это авторский учебный показатель для сравнения ответов в рамках данного проекта, а не общепринятый научный индекс. Оценку выставляет эксперт после проверки ответа.</p>
+      </div>
+    </div>
+
+    <!-- ВКЛАДКА 2: ТРЕНАЖЁР ЗНАНИЙ -->
+    <div id="tab-trainer" class="hidden glass-card p-6 rounded-2xl space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-base">Интерактивный экспресс-тест на химическую внимательность</h3>
+        <span id="trainerScore" class="text-xs font-mono-chem bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full">Счёт: 0 / 0</span>
+      </div>
+
+      <div id="quizContainer" class="space-y-4">
+        <!-- Загружается из JS -->
+      </div>
+    </div>
+
+    <!-- ВКЛАДКА 3: ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ -->
+    <div id="tab-lab" class="hidden glass-card p-6 rounded-2xl space-y-6">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="space-y-4">
+          <h3 class="font-bold text-white text-sm border-b border-slate-800 pb-2">Параметры эксперимента</h3>
+          
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Реакционная смесь:</label>
+            <select id="labReactionSelect" class="w-full bg-slate-950 border border-slate-800 text-xs text-white p-2.5 rounded-xl">
+              <option value="sediment">CuSO4 + NaOH (Образование осадка)</option>
+              <option value="gas">Zn + HCl (Выделение водорода)</option>
+              <option value="color">KMnO4 + H2SO4 + Na2SO3 (Обесцвечивание)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Температура: <span id="tempVal" class="text-cyan-400 font-mono-chem">25</span>°C</label>
+            <input type="range" id="tempRange" min="0" max="100" value="25" oninput="document.getElementById('tempVal').innerText=this.value" class="w-full accent-cyan-400">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Катализатор:</label>
+            <select id="labCatSelect" class="w-full bg-slate-950 border border-slate-800 text-xs text-white p-2.5 rounded-xl">
+              <option value="none">Без катализатора</option>
+              <option value="h2so4">H2SO4 (конц)</option>
+              <option value="pt">Платина (Pt)</option>
+            </select>
+          </div>
+
+          <button onclick="runLabExperiment()" class="w-full py-2.5 rounded-xl bg-cyan-500 font-bold text-slate-950 text-xs hover:bg-cyan-400 transition-all">
+            ▶️ Провести опыт в колбе
+          </button>
+        </div>
+
+        <!-- КАНВАС КОЛБЫ -->
+        <div class="md:col-span-2 flex flex-col items-center justify-center bg-slate-950 p-4 rounded-xl border border-slate-800 relative min-h-[260px]">
+          <canvas id="flaskCanvas" width="300" height="220"></canvas>
+          <div id="flaskStatus" class="mt-2 text-xs font-mono-chem text-slate-400 text-center">Ожидание запуска реакции...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ЗАКЛЮЧЕНИЕ ==================== -->
+  <section id="conclusion" class="scroll-mt-24 space-y-6">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">✅</span>
+      <h2 class="text-3xl font-bold text-white">Заключение</h2>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl space-y-4 text-sm text-slate-300 leading-relaxed">
+      <p>
+        В рамках проекта разработана методика экспертной оценки ответов генеративных нейросетей по пяти критериям и создан цифровой прототип «AI-Химик». Приведённые в таблице баллы являются внесёнными оценочными данными; окончательный вывод о точности ChatGPT, Gemini и Claude можно делать только после проверки исходных ответов моделей и подтверждения результатов протоколами эксперимента.
+      </p>
+      <p>
+        Созданный цифровой помощник **«AI-Химик»** помогает структурированно проверять ответы нейросетей и рассчитывать авторский **Индекс химической достоверности (ИХД)**. Он не заменяет учебник, учителя и проверку химических уравнений.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==================== ПРИЛОЖЕНИЯ А-М ==================== -->
+  <section id="apps" class="scroll-mt-24 space-y-6">
+    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+      <span class="text-3xl">📎</span>
+      <h2 class="text-3xl font-bold text-white">Приложения (А–М)</h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="appsGrid">
+      <!-- Динамически рендерится через JS -->
+    </div>
+  </section>
+
+</main>
+
+<!-- Окно просмотра приложений: содержание приложений встроено в HTML -->
+<div id="appendixModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="appendixTitle">
+  <div class="glass-card w-full max-w-5xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col border border-cyan-500/30">
+    <div class="flex items-start justify-between gap-4 p-5 border-b border-slate-800">
+      <div>
+        <div id="appendixKicker" class="text-xs uppercase tracking-widest text-cyan-400 font-bold">Приложение</div>
+        <h3 id="appendixTitle" class="text-xl sm:text-2xl font-black text-white mt-1"></h3>
+      </div>
+      <button id="appendixClose" type="button" aria-label="Закрыть приложение" class="shrink-0 rounded-lg px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white">✕</button>
+    </div>
+    <div id="appendixBody" class="p-5 sm:p-7 overflow-y-auto text-sm text-slate-200 leading-relaxed space-y-4"></div>
+    <div class="p-4 border-t border-slate-800 flex flex-wrap justify-between gap-2">
+      <div class="flex gap-2">
+        <button id="appendixPrev" type="button" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold">← Предыдущее</button>
+        <button id="appendixNext" type="button" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold">Следующее →</button>
+      </div>
+      <button id="appendixPrint" type="button" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold">Печать приложения</button>
+    </div>
+  </div>
+</div>
+
+<!-- Подвал -->
+<footer class="glass-card border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-400">
+  <div class="max-w-6xl mx-auto space-y-3">
+    <div class="text-sm font-bold text-cyan-300">«AI-Химик» — Научно-исследовательский проект по химии</div>
+    <div>Девиз: <span class="text-slate-200 font-semibold">«Нейросеть предлагает — ученик проверяет!»</span></div>
+    <div class="text-slate-500">2026 год. Разработано в образовательных целях.</div>
+  </div>
+</footer>
+
+<!-- ИНТЕРАКТИВНЫЙ СКРИПТ ПРИЛОЖЕНИЯ -->
+<script>
+// ==================== 1. ДАННЫЕ 20 ХИМИЧЕСКИХ РЕАКЦИЙ ====================
+const reactionsData = [
+  { id: 1, name: "Горение метана", eq: "CH4 + 2O2 → CO2 + 2H2O", type: "Окисление", cond: "t°", gpt: 5, gem: 5, cld: 5 },
+  { id: 2, name: "Хлорирование метана", eq: "CH4 + Cl2 → CH3Cl + HCl", type: "Замещение (свободнорадикальное)", cond: "hν (УФ-свет)", gpt: 5, gem: 4, cld: 5 },
+  { id: 3, name: "Гидрирование этена", eq: "C2H4 + H2 → C2H6", type: "Присоединение", cond: "Ni, t°", gpt: 5, gem: 4, cld: 5 },
+  { id: 4, name: "Гидратация этена", eq: "C2H4 + H2O → C2H5OH", type: "Присоединение", cond: "H3PO4, t°, p", gpt: 4, gem: 4, cld: 5 },
+  { id: 5, name: "Бромирование этена", eq: "C2H4 + Br2 → C2H4Br2", type: "Качественная реакция", cond: "комнатная t°", gpt: 5, gem: 5, cld: 5 },
+  { id: 6, name: "Внутримол. дегидратация этанола", eq: "C2H5OH → C2H4 + H2O", type: "Элиминирование", cond: "H2SO4 (конц), t > 140°C", gpt: 4, gem: 4, cld: 5 },
+  { id: 7, name: "Межмол. дегидратация этанола", eq: "2C2H5OH → C2H5-O-C2H5 + H2O", type: "Межмолекулярная дегидратация (образование простого эфира)", cond: "H2SO4 (конц), t < 140°C", gpt: 3, gem: 3, cld: 4 },
+  { id: 8, name: "Окисление этанола CuO", eq: "C2H5OH + CuO → CH3CHO + Cu + H2O", type: "Окисление", cond: "t°", gpt: 5, gem: 4, cld: 5 },
+  { id: 9, name: "Этерификация", eq: "CH3COOH + C2H5OH ⇄ CH3COOC2H5 + H2O", type: "Обратимая этерификация", cond: "H2SO4 (конц), t°", gpt: 5, gem: 4, cld: 5 },
+  { id: 10, name: "Щелочной гидролиз сложного эфира", eq: "CH3COOC2H5 + NaOH → CH3COONa + C2H5OH", type: "Щелочной гидролиз (омыление)", cond: "t°", gpt: 4, gem: 4, cld: 4 },
+  { id: 11, name: "Нитрование бензола", eq: "C6H6 + HNO3 → C6H5NO2 + H2O", type: "Электрофильное замещение", cond: "H2SO4 (конц), t°", gpt: 4, gem: 4, cld: 5 },
+  { id: 12, name: "Гидрирование бензола", eq: "C6H6 + 3H2 → C6H12", type: "Присоединение", cond: "Ni/Pt, t°, p", gpt: 4, gem: 4, cld: 4 },
+  { id: 13, name: "Окисление толуола KMnO4", eq: "5C6H5CH3 + 6KMnO4 + 9H2SO4 → 5C6H5COOH + 6MnSO4 + 3K2SO4 + 14H2O", type: "ОВР органика", cond: "t° (кислая среда)", gpt: 3, gem: 3, cld: 4 },
+  { id: 14, name: "Гидролиз карбида кальция", eq: "CaC2 + 2H2O → C2H2↑ + Ca(OH)2↓", type: "Гидролиз", cond: "нормальные", gpt: 5, gem: 5, cld: 5 },
+  { id: 15, name: "Полимеризация этилена", eq: "n C2H4 → (-CH2-CH2-)n", type: "Полимеризация", cond: "p, t°, катализатор", gpt: 5, gem: 4, cld: 4 },
+  { id: 16, name: "Нейтрализация HCl + NaOH", eq: "HCl + NaOH → NaCl + H2O", type: "Ионный обмен", cond: "нормальные", gpt: 5, gem: 5, cld: 5 },
+  { id: 17, name: "Реакция замещения Fe + CuSO4", eq: "Fe + CuSO4 → FeSO4 + Cu↓", type: "Замещение", cond: "водный раствор", gpt: 5, gem: 5, cld: 5 },
+  { id: 18, name: "Качественная на Cl- (AgNO3)", eq: "AgNO3 + NaCl → AgCl↓ + NaNO3", type: "Ионный обмен", cond: "нормальные", gpt: 5, gem: 5, cld: 5 },
+  { id: 19, name: "Разложение CaCO3", eq: "CaCO3 → CaO + CO2↑", type: "Разложение", cond: "t ≈ 900°C", gpt: 5, gem: 4, cld: 4 },
+  { id: 20, name: "ОВР KMnO4 + HCl", eq: "2KMnO4 + 16HCl → 2MnCl2 + 2KCl + 5Cl2↑ + 8H2O", type: "ОВР неорганика", cond: "t°", gpt: 4, gem: 3, cld: 4 }
+];
+
+// РЕНДЕР ТАБЛИЦЫ РЕАКЦИЙ
+function renderReactionsTable(data) {
+  const tbody = document.getElementById('reactionsTableBody');
+  tbody.innerHTML = '';
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-slate-900/40 transition-colors";
+    tr.innerHTML = `
+      <td class="p-3 font-mono-chem text-slate-400 font-bold">${r.id}</td>
+      <td class="p-3">
+        <div class="font-semibold text-white">${r.name}</div>
+        <div class="text-[10px] text-cyan-400 font-mono-chem">${r.cond}</div>
+      </td>
+      <td class="p-3 font-mono-chem text-cyan-300 font-semibold text-[11px]">${r.eq}</td>
+      <td class="p-3 text-slate-400">${r.type}</td>
+      <td class="p-3 text-center font-bold text-cyan-400 font-mono-chem">${r.gpt}/5</td>
+      <td class="p-3 text-center font-bold text-purple-400 font-mono-chem">${r.gem}/5</td>
+      <td class="p-3 text-center font-bold text-emerald-400 font-mono-chem">${r.cld}/5</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('tableSearch')?.addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  const filtered = reactionsData.filter(r => 
+    r.name.toLowerCase().includes(q) || 
+    r.eq.toLowerCase().includes(q) || 
+    r.type.toLowerCase().includes(q)
+  );
+  renderReactionsTable(filtered);
+});
+
+// ==================== 2. ПРИЛОЖЕНИЯ (А-М) ====================
+const appsList = [
+  { letter: 'А', name: 'Промпты для тестирования', desc: 'Единый запрос и перечень из 20 реакций для проверки моделей.' },
+  { letter: 'Б', name: 'Таблица растворимости', desc: 'Краткий справочник для проверки продуктов реакций обмена.' },
+  { letter: 'В', name: 'Ряд активности металлов', desc: 'Ряд активности и правила прогнозирования реакций замещения.' },
+  { letter: 'Г', name: 'Катализаторы и условия', desc: 'Условия проведения выбранных органических реакций.' },
+  { letter: 'Д', name: 'Протокол проверки ответов ИИ', desc: 'Пустой бланк для фиксации результатов без вымышленных данных.' },
+  { letter: 'Е', name: 'Лабораторные наблюдения', desc: 'Ожидаемые признаки демонстрационных реакций и правила безопасности.' },
+  { letter: 'Ж', name: 'Формула расчёта ИХД', desc: 'Пять критериев, шкала и пример вычисления индекса.' },
+  { letter: 'З', name: 'Правила Марковникова и Зайцева', desc: 'Краткая памятка по направлению органических реакций.' },
+  { letter: 'И', name: 'Сравнительные результаты', desc: 'Сводные баллы, внесённые в таблицу проекта; требуют протокольного подтверждения.' },
+  { letter: 'К', name: 'Словарь терминов ИИ', desc: 'Основные понятия искусственного интеллекта и химической информатики.' },
+  { letter: 'Л', name: 'Рекомендации учителям и учащимся', desc: 'Как критически и безопасно использовать ИИ на уроках химии.' },
+  { letter: 'М', name: 'Структура цифрового помощника', desc: 'Алгоритм работы, поля базы реакций и логика проверки ответа.' }
+];
+
+// Весь материал приложений хранится внутри HTML и открывается без внешних файлов.
+const appendixContent = {
+  'А': `
+    <p class="text-slate-300">Единый запрос для всех тестируемых моделей. В каждом запуске необходимо сохранять исходный запрос, полный ответ модели, дату и название/версию модели.</p>
+    <div class="rounded-xl bg-slate-950 border border-cyan-500/20 p-4">
+      <div class="text-cyan-300 font-bold mb-2">Стандартизированный промпт</div>
+      <p>«Для указанной химической реакции определите основные продукты, запишите формулы веществ и полное уравнение с коэффициентами, укажите тип реакции и необходимые условия (температура, катализатор, давление, среда). Не придумывайте данные, если условия неизвестны. Кратко объясните прогноз».</p>
+    </div>
+    <h4 class="font-bold text-white">Перечень тестовых реакций</h4>
+    <div class="overflow-x-auto"><table class="w-full text-xs border-collapse"><thead><tr class="text-cyan-300"><th class="p-2 text-left">№</th><th class="p-2 text-left">Реакция</th><th class="p-2 text-left">Эталонное уравнение</th></tr></thead><tbody>
+    ${reactionsData.map(r => `<tr class="border-t border-slate-800"><td class="p-2">${r.id}</td><td class="p-2">${r.name}</td><td class="p-2 font-mono-chem text-cyan-200">${r.eq}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="text-amber-200 text-xs">Примечание: перед итоговым тестированием каждое эталонное уравнение и условие следует сверить с учебником или надёжным химическим справочником.</p>`,
+  'Б': `
+    <p>Краткая памятка для проверки, возможен ли обмен и образуется ли осадок, газ или слабый электролит.</p>
+    <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-cyan-300"><th class="p-2 text-left">Группа веществ</th><th class="p-2 text-left">Общее правило</th><th class="p-2 text-left">Примеры</th></tr></thead><tbody>
+    <tr class="border-t border-slate-800"><td class="p-2">Нитраты</td><td class="p-2">Почти все растворимы</td><td class="p-2">NaNO₃, AgNO₃</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Соли натрия, калия, аммония</td><td class="p-2">Растворимы</td><td class="p-2">NaCl, K₂SO₄, NH₄Cl</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Хлориды</td><td class="p-2">Большинство растворимы; AgCl и PbCl₂ — исключения</td><td class="p-2">AgCl↓</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Сульфаты</td><td class="p-2">Большинство растворимы; BaSO₄ и PbSO₄ нерастворимы</td><td class="p-2">BaSO₄↓</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Карбонаты</td><td class="p-2">Большинство нерастворимы, кроме солей щелочных металлов и аммония</td><td class="p-2">CaCO₃↓</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Гидроксиды</td><td class="p-2">Большинство нерастворимы; щёлочи растворимы</td><td class="p-2">Cu(OH)₂↓</td></tr>
+    </tbody></table></div>
+    <p class="text-xs text-slate-400">Таблица носит учебный справочный характер. Для конкретной реакции проверяйте растворимость всех исходных веществ и продуктов.</p>`,
+  'В': `
+    <p>Ряд активности металлов (от более активных к менее активным):</p>
+    <div class="rounded-xl bg-slate-950 p-4 text-center font-mono-chem text-cyan-200 leading-8">Li K Ba Ca Na Mg Al Mn Zn Cr Fe Co Ni Sn Pb (H) Cu Hg Ag Pt Au</div>
+    <ul class="list-disc pl-5 space-y-2">
+      <li>Металл, расположенный левее (выше) другого, обычно вытесняет его из раствора соли, если реакция не осложнена пассивацией и другими факторами.</li>
+      <li>Металлы, стоящие до водорода, способны вытеснять водород из растворов неокисляющих кислот.</li>
+      <li>Металлы после водорода обычно не вытесняют водород из разбавленных неокисляющих кислот.</li>
+    </ul>
+    <div class="rounded-xl bg-slate-950 p-4"><b class="text-cyan-300">Пример:</b><br><span class="font-mono-chem">Fe + CuSO₄ → FeSO₄ + Cu↓</span><br>Железо активнее меди, поэтому вытесняет её из раствора соли.</div>`,
+  'Г': `
+    <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-cyan-300"><th class="p-2 text-left">Реакция</th><th class="p-2 text-left">Условия</th><th class="p-2 text-left">Назначение</th></tr></thead><tbody>
+    <tr class="border-t border-slate-800"><td class="p-2">Гидрирование алкенов</td><td class="p-2">Ni, нагревание</td><td class="p-2">Катализатор присоединения водорода</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Гидратация этена</td><td class="p-2">H₃PO₄, повышенные температура и давление</td><td class="p-2">Катализ кислотного присоединения воды</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Дегидратация этанола</td><td class="p-2">H₂SO₄(конц), около 170 °C</td><td class="p-2">Получение этена</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Межмолекулярная дегидратация этанола</td><td class="p-2">H₂SO₄(конц), около 140 °C</td><td class="p-2">Получение диэтилового эфира</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Нитрование бензола</td><td class="p-2">HNO₃(конц), H₂SO₄(конц), нагревание</td><td class="p-2">Электрофильное замещение</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2">Этерификация</td><td class="p-2">H₂SO₄(конц), нагревание</td><td class="p-2">Катализ и связывание воды</td></tr>
+    </tbody></table></div>
+    <p class="text-amber-200 text-xs">Условия приведены как учебные ориентиры; конкретные значения зависят от методики и режима процесса.</p>`,
+  'Д': `
+    <p>Заполняйте этот протокол отдельно для каждого ответа каждой нейросети. Вставляйте дословный ответ модели, не редактируя его до выставления баллов.</p>
+    <div class="rounded-xl border border-slate-700 p-4 space-y-3">
+      <p><b>Модель и версия:</b> ______________________________</p><p><b>Дата и время:</b> ______________________________</p><p><b>Номер реакции / исходные вещества:</b> ______________________________</p>
+      <p><b>Ответ нейросети (дословно):</b></p><div class="min-h-24 rounded-lg bg-slate-950 border border-slate-800 p-3 text-slate-500">Место для вставки ответа…</div>
+      <p><b>Оценка по критериям ИХД:</b></p>
+      <ul class="list-disc pl-5"><li>Продукты реакции — 0 / 1</li><li>Формулы веществ — 0 / 1</li><li>Коэффициенты — 0 / 1</li><li>Тип реакции — 0 / 1</li><li>Условия реакции — 0 / 1</li></ul>
+      <p><b>Итого:</b> ____ / 5 баллов; ИХД = ____ %</p><p><b>Комментарий эксперта:</b> __________________________________________</p>
+    </div>
+    <p class="text-xs text-slate-400">Не заполняйте бланк предполагаемыми или демонстрационными цифрами: в исследование вносятся только фактически полученные ответы.</p>`,
+  'Е': `
+    <p>В приложении приведены ожидаемые признаки нескольких школьных демонстрационных реакций. Иллюстрации в виртуальной лаборатории являются анимацией, а не фотографиями реального опыта.</p>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-cyan-300 font-bold mb-2">Образование осадка</div><div class="text-2xl mb-2">🧪 🔵</div><p class="font-mono-chem text-xs">CuSO₄ + 2NaOH → Cu(OH)₂↓ + Na₂SO₄</p><p class="text-xs mt-2">Наблюдение: образование голубого осадка гидроксида меди(II).</p></div>
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-cyan-300 font-bold mb-2">Выделение газа</div><div class="text-2xl mb-2">🧪 ○ ○</div><p class="font-mono-chem text-xs">Zn + 2HCl → ZnCl₂ + H₂↑</p><p class="text-xs mt-2">Наблюдение: выделение пузырьков бесцветного водорода.</p></div>
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-cyan-300 font-bold mb-2">Обесцвечивание раствора</div><div class="text-2xl mb-2">🟣 → ◻️</div><p class="font-mono-chem text-xs">Алкен + Br₂ → дигалогеналкан</p><p class="text-xs mt-2">Наблюдение: исчезновение окраски бромной воды при реакции с алкеном.</p></div>
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-cyan-300 font-bold mb-2">Осаждение хлорида серебра</div><div class="text-2xl mb-2">🧪 ⚪</div><p class="font-mono-chem text-xs">AgNO₃ + NaCl → AgCl↓ + NaNO₃</p><p class="text-xs mt-2">Наблюдение: белый творожистый осадок AgCl.</p></div>
+    </div>
+    <p class="text-amber-200 text-xs">Опыты с кислотами, бромом, солями тяжёлых металлов и газами выполняются только учителем или под его непосредственным контролем, с соблюдением техники безопасности.</p>`,
+  'Ж': `
+    <p>Индекс химической достоверности (ИХД) — авторский учебный показатель для сравнения полноты и корректности ответа модели по пяти критериям.</p>
+    <div class="rounded-xl bg-slate-950 p-5 text-center"><div class="text-xs text-slate-400 mb-2">Формула</div><div class="text-2xl font-black text-cyan-300">ИХД = (B / 5) × 100%</div><div class="text-xs text-slate-400 mt-2">B — сумма набранных баллов от 0 до 5</div></div>
+    <ol class="list-decimal pl-5 space-y-1"><li>Продукты реакции определены правильно.</li><li>Формулы веществ записаны верно.</li><li>Коэффициенты расставлены правильно.</li><li>Тип реакции определён верно.</li><li>Необходимые условия реакции указаны корректно.</li></ol>
+    <div class="rounded-xl bg-slate-950 p-4"><b class="text-cyan-300">Пример:</b> если ответ получил 4 балла из 5, то ИХД = (4 / 5) × 100% = 80%.</div>
+    <p class="text-xs text-slate-400">ИХД является авторской методикой данного проекта и не представляет собой общепринятый научный стандарт.</p>`,
+  'З': `
+    <div class="space-y-3">
+      <div class="rounded-xl bg-slate-950 p-4"><b class="text-cyan-300">Правило Марковникова</b><p class="mt-2">При присоединении HX к несимметричному алкену атом водорода преимущественно присоединяется к тому атому углерода двойной связи, у которого уже больше атомов водорода.</p><p class="font-mono-chem mt-2 text-xs">CH₃–CH=CH₂ + HBr → CH₃–CHBr–CH₃ (основной продукт)</p></div>
+      <div class="rounded-xl bg-slate-950 p-4"><b class="text-cyan-300">Правило Зайцева</b><p class="mt-2">При элиминировании в типичных случаях преимущественно образуется более замещённый алкен.</p><p class="mt-2 text-xs">При прогнозировании обязательно учитывайте строение исходного вещества, реагент, температуру и механизм реакции.</p></div>
+    </div>`,
+  'И': `
+    <p>В HTML-таблицу проекта внесены следующие суммарные баллы по 20 реакциям. Это данные, уже записанные в таблице проекта; они не заменяют исходные протоколы ответов нейросетей.</p>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-xs text-slate-400">ChatGPT</div><div class="text-2xl font-black text-cyan-300">90 / 100</div><div class="text-xs text-slate-400">90% от максимума</div></div>
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-xs text-slate-400">Gemini</div><div class="text-2xl font-black text-purple-300">83 / 100</div><div class="text-xs text-slate-400">83% от максимума</div></div>
+      <div class="rounded-xl bg-slate-950 p-4"><div class="text-xs text-slate-400">Claude</div><div class="text-2xl font-black text-emerald-300">93 / 100</div><div class="text-xs text-slate-400">93% от максимума</div></div>
+    </div>
+    <p class="text-amber-200 text-xs">Перед публикацией результатов необходимо сверить каждую оценку с сохранёнными ответами моделей и заполненными протоколами. Не представляйте эти значения как независимо подтверждённый эксперимент без такой проверки.</p>`,
+  'К': `
+    <dl class="space-y-3">
+      <div><dt class="font-bold text-cyan-300">Искусственный интеллект (ИИ)</dt><dd>Компьютерные методы, выполняющие задачи, обычно требующие интеллектуальной деятельности человека.</dd></div>
+      <div><dt class="font-bold text-cyan-300">Нейросеть</dt><dd>Математическая модель, состоящая из взаимосвязанных вычислительных элементов и обучаемых параметров.</dd></div>
+      <div><dt class="font-bold text-cyan-300">LLM</dt><dd>Большая языковая модель, обученная работать с текстом и генерировать последовательности слов и символов.</dd></div>
+      <div><dt class="font-bold text-cyan-300">Промпт</dt><dd>Текстовый запрос или инструкция, задающая модели задачу и формат ответа.</dd></div>
+      <div><dt class="font-bold text-cyan-300">Галлюцинация ИИ</dt><dd>Правдоподобно звучащий, но ошибочный или неподтверждённый ответ модели.</dd></div>
+      <div><dt class="font-bold text-cyan-300">SMILES</dt><dd>Текстовая запись структуры химического соединения с помощью символов.</dd></div>
+      <div><dt class="font-bold text-cyan-300">Валидация</dt><dd>Проверка результата по заранее определённым критериям и достоверным источникам.</dd></div>
+    </dl>`,
+  'Л': `
+    <ol class="list-decimal pl-5 space-y-2">
+      <li>Формулируйте одинаковый и конкретный запрос, если сравниваете несколько нейросетей.</li>
+      <li>Просите модель указывать условия реакции и отмечать неопределённость, если данных недостаточно.</li>
+      <li>Проверяйте формулы, коэффициенты и продукты по учебнику и проверенным справочникам.</li>
+      <li>Разделяйте ответ нейросети и собственный вывод учащегося.</li>
+      <li>Не используйте непроверенный прогноз для реального химического эксперимента.</li>
+      <li>Сохраняйте запросы и полные ответы, чтобы результаты исследования можно было повторить.</li>
+      <li>Обсуждайте ошибки ИИ как учебные ситуации для развития критического мышления.</li>
+    </ol>`,
+  'М': `
+    <h4 class="font-bold text-white">Алгоритм работы «AI-Химика»</h4>
+    <ol class="list-decimal pl-5 space-y-2"><li>Пользователь вводит исходные вещества.</li><li>Система ищет совпадение в учебной базе реакций.</li><li>Для известной реакции показывает справочное уравнение, тип, условия и признаки.</li><li>Пользователь получает отдельный ответ нейросети и сравнивает его с эталоном.</li><li>По пяти критериям выставляет 0 или 1 балл.</li><li>Калькулятор рассчитывает ИХД и показывает процент.</li></ol>
+    <h4 class="font-bold text-white mt-4">Структура записи в базе данных</h4>
+    <div class="overflow-x-auto"><table class="w-full text-xs"><tbody>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Исходные вещества</td><td class="p-2">Формулы реагентов</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Продукты</td><td class="p-2">Формулы ожидаемых продуктов</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Уравнение</td><td class="p-2">Сбалансированная реакция</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Тип реакции</td><td class="p-2">Классификация процесса</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Условия</td><td class="p-2">Температура, катализатор, давление, среда</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Признаки</td><td class="p-2">Осадок, газ, изменение окраски и др.</td></tr>
+    <tr class="border-t border-slate-800"><td class="p-2 text-cyan-300">Источник</td><td class="p-2">Учебник или справочник для проверки</td></tr>
+    </tbody></table></div>
+    <p class="text-xs text-slate-400">Текущая версия сайта — учебный прототип с локальной базой. Внешнее подключение ChatGPT, Gemini или Claude не выполняется.</p>`
+};
+
+function renderApps() {
+  const grid = document.getElementById('appsGrid');
+  grid.innerHTML = '';
+  appsList.forEach((app, index) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'glass-card glass-card-hover p-4 rounded-xl space-y-2 border border-slate-800 cursor-pointer text-left w-full focus:outline-none focus:ring-2 focus:ring-cyan-400';
+    card.setAttribute('aria-label', `Открыть приложение ${app.letter}: ${app.name}`);
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <span class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">${app.letter}</span>
+        <span class="text-[10px] text-cyan-300 font-mono-chem">ОТКРЫТЬ ↗</span>
+      </div>
+      <h4 class="font-bold text-white text-xs">${app.name}</h4>
+      <p class="text-[11px] text-slate-400 leading-tight">${app.desc}</p>
+    `;
+    card.addEventListener('click', () => openAppendix(index));
+    grid.appendChild(card);
+  });
+}
+
+let currentAppendixIndex = 0;
+function openAppendix(index) {
+  currentAppendixIndex = (index + appsList.length) % appsList.length;
+  const app = appsList[currentAppendixIndex];
+  document.getElementById('appendixKicker').textContent = `ПРИЛОЖЕНИЕ ${app.letter}`;
+  document.getElementById('appendixTitle').textContent = app.name;
+  document.getElementById('appendixBody').innerHTML = appendixContent[app.letter] || '<p>Материал приложения готовится.</p>';
+  const modal = document.getElementById('appendixModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('appendixPrev').disabled = currentAppendixIndex === 0;
+  document.getElementById('appendixNext').disabled = currentAppendixIndex === appsList.length - 1;
+  document.getElementById('appendixPrev').classList.toggle('opacity-40', currentAppendixIndex === 0);
+  document.getElementById('appendixNext').classList.toggle('opacity-40', currentAppendixIndex === appsList.length - 1);
+}
+function closeAppendix() {
+  const modal = document.getElementById('appendixModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = '';
+}
+document.getElementById('appendixClose').addEventListener('click', closeAppendix);
+document.getElementById('appendixPrev').addEventListener('click', () => openAppendix(currentAppendixIndex - 1));
+document.getElementById('appendixNext').addEventListener('click', () => openAppendix(currentAppendixIndex + 1));
+document.getElementById('appendixPrint').addEventListener('click', () => {
+  const title = document.getElementById('appendixTitle').textContent;
+  const body = document.getElementById('appendixBody').innerHTML;
+  const w = window.open('', '_blank');
+  if (!w) { alert('Разрешите открытие всплывающего окна для печати.'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${title}</title><style>body{font:14px Arial,sans-serif;line-height:1.55;color:#111;max-width:900px;margin:35px auto;padding:0 20px}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:15px 0}td,th{border:1px solid #999;padding:7px;text-align:left}th{background:#eee}.font-mono-chem{font-family:monospace}.text-cyan-300,.text-cyan-200{color:#075985}.text-slate-400{color:#555}.rounded-xl{margin:12px 0;padding:10px;border:1px solid #ccc}</style></head><body><h1>Приложение ${appsList[currentAppendixIndex].letter}. ${title}</h1>${body}</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+});
+document.getElementById('appendixModal').addEventListener('click', (e) => {
+  if (e.target.id === 'appendixModal') closeAppendix();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAppendix();
+});
+
+// ==================== 3. МОДУЛЬ ПРЕДСКАЗАНИЯ & ИХД ====================
+
+const presetDB = {
+  "C2H4+H2O": {
+    eq: "C2H4 + H2O → C2H5OH",
+    type: "Гидратация (Присоединение)",
+    cond: "H3PO4 (катализатор), t = 300°C, p = 7 МПа",
+    visual: "Без видимых изменений (газ превращается в пара́ спирта)",
+    explain: "Нейросеть правильно предсказала образование этанола. Реакция идет по правилу Марковникова."
+  },
+  "CH3COOH+C2H5OH": {
+    eq: "CH3COOH + C2H5OH ⇄ CH3COOC2H5 + H2O",
+    type: "Этерификация (Обратимая)",
+    cond: "H2SO4 (конц), нагревание",
+    visual: "Появление фруктового/задорного запаха этилацетата",
+    explain: "Отличный прогноз ИИ. Концентрированная серная кислота выступает водоотнимающим агентом."
+  },
+  "C2H5OH_170": {
+    eq: "C2H5OH → C2H4↑ + H2O",
+    type: "Внутримолекулярная дегидратация",
+    cond: "H2SO4 (конц), t > 140°C",
+    visual: "Выделение горючего газа (этилена)",
+    explain: "Внимание! ИИ иногда путает продукт с диэтиловым эфиром, если не указать температуру выше 140°C!"
+  },
+  "CH4+Cl2": {
+    eq: "CH4 + Cl2 → CH3Cl + HCl",
+    type: "Свободнорадикальное замещение (SR)",
+    cond: "УФ-излучение (hν)",
+    visual: "Постепенное обесцвечивание жёлто-зелёного хлора",
+    explain: "Цепной механизм. ИИ правильно указывает первую стадию хлорирования."
+  },
+  "Fe+CuSO4": {
+    eq: "Fe + CuSO4 → FeSO4 + Cu↓",
+    type: "Замещение (Ионный обмен)",
+    cond: "Комнатная температура, водный раствор",
+    visual: "Выпадение красного налёта меди на железе, изменение цвета раствора с голубого на зеленоватый",
+    explain: "Идеальный прогноз. Железо активнее меди в ряду напряжений Nernst."
+  },
+  "NaOH+HCl": {
+    eq: "NaOH + HCl → NaCl + H2O",
+    type: "Нейтрализация",
+    cond: "Без спецусловий",
+    visual: "Выделение тепла (экзотермический процесс)",
+    explain: "Базовая реакция ионного обмена. Ошибки ИИ исключены."
+  }
+};
+
+function loadPresetReaction() {
+  const val = document.getElementById('presetSelect').value;
+  if (!val || !presetDB[val]) return;
+  const item = presetDB[val];
+  
+  if (val === "C2H4+H2O") {
+    document.getElementById('inputReagents').value = "C2H4 + H2O";
+    document.getElementById('inputConditions').value = "H3PO4, 300°C";
+  } else if (val === "CH3COOH+C2H5OH") {
+    document.getElementById('inputReagents').value = "CH3COOH + C2H5OH";
+    document.getElementById('inputConditions').value = "H2SO4 (конц), t°";
+  } else if (val === "C2H5OH_170") {
+    document.getElementById('inputReagents').value = "C2H5OH";
+    document.getElementById('inputConditions').value = "H2SO4 (конц), t > 140°C";
+  } else if (val === "CH4+Cl2") {
+    document.getElementById('inputReagents').value = "CH4 + Cl2";
+    document.getElementById('inputConditions').value = "УФ-свет (hν)";
+  } else if (val === "Fe+CuSO4") {
+    document.getElementById('inputReagents').value = "Fe + CuSO4";
+    document.getElementById('inputConditions').value = "водный раствор";
+  } else if (val === "NaOH+HCl") {
+    document.getElementById('inputReagents').value = "NaOH + HCl";
+    document.getElementById('inputConditions').value = "нормальные";
+  }
+}
+
+function analyzeReaction() {
+  const reagents = document.getElementById('inputReagents').value.trim();
+  const cond = document.getElementById('inputConditions').value.trim();
+  const resDiv = document.getElementById('predictResult');
+  if (!reagents) {
+    alert("Пожалуйста, введите исходные вещества!");
+    return;
+  }
+  resDiv.classList.remove('hidden');
+  const normalized = reagents.toUpperCase().replace(/\s+/g, '');
+  const presetKey = Object.keys(presetDB).find(k => {
+    const key = k.toUpperCase().replace(/\s+/g, '');
+    return normalized === key || normalized.includes(key) || key.includes(normalized);
+  });
+  if (presetKey && presetDB[presetKey]) {
+    const data = presetDB[presetKey];
+    document.getElementById('resEquation').innerText = data.eq;
+    document.getElementById('resIHD').innerText = 'Не рассчитан: оцените ответ по критериям ниже';
+    document.getElementById('resType').innerText = data.type;
+    document.getElementById('resCond').innerText = data.cond;
+    document.getElementById('resVisual').innerText = data.visual;
+    document.getElementById('resExplain').innerText = data.explain + ' Это справочный учебный пример, а не результат фактического ответа подключённой нейросети.';
+  } else {
+    document.getElementById('resEquation').innerText = 'Справочное уравнение для этой комбинации не внесено в базу.';
+    document.getElementById('resIHD').innerText = 'Не рассчитан';
+    document.getElementById('resType').innerText = 'Требуется химическая проверка';
+    document.getElementById('resCond').innerText = cond || 'Условия не указаны';
+    document.getElementById('resVisual').innerText = 'Определяются по конкретной реакции';
+    document.getElementById('resExplain').innerText = 'Автоматическое обращение к внешней нейросети не подключено. Получите ответ модели отдельно, затем оцените его по пяти критериям в калькуляторе ИХД. Не используйте неподтверждённый прогноз для проведения опыта.';
+  }
+}
+
+function calculateIHD() {
+  const checks = [...document.querySelectorAll('.ihd-check')];
+  const score = checks.filter(item => item.checked).length;
+  const percent = score / 5 * 100;
+  document.getElementById('ihdFraction').innerText = `${score} из 5 баллов`;
+  document.getElementById('ihdPercent').innerText = `${percent}%`;
+  return { score, percent };
+}
+
+function resetIHD() {
+  document.querySelectorAll('.ihd-check').forEach(item => item.checked = false);
+  calculateIHD();
+}
+
+function copyIHDResult() {
+  const result = calculateIHD();
+  const text = `ИХД: ${result.score}/5 баллов (${result.percent}%). Формула: (баллы / 5) × 100%.`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => alert('Результат скопирован.')).catch(() => alert(text));
+  } else {
+    alert(text);
+  }
+}
+
+// ==================== 4. ТРЕНАЖЁР ЗНАНИЙ ====================
+const quizQuestions = [
+  {
+    q: "Какова главная ошибка ИИ при прогнозировании реакции C2H5OH с H2SO4(конц)?",
+    options: [
+      "ИИ всегда путает этилен и этан",
+      "ИИ может выдать диэтиловый эфир вместо этилена, если не указана t > 140°C",
+      "ИИ считает, что реакция не идет",
+      "ИИ ошибается в формуле воды"
+    ],
+    correct: 1
+  },
+  {
+    q: "Что происходит при добавлении бромной воды (Br2) к этилену (C2H4)?",
+    options: [
+      "Выпадает белый осадок",
+      "Оранжево-коричневый раствор обесцвечивается",
+      "Выделяется фиолетовый газ",
+      "Ничего не происходит"
+    ],
+    correct: 1
+  },
+  {
+    q: "Какое правило определяет направление присоединения галогеноводородов к несимметричным алкенам?",
+    options: ["Правило Зайцева", "Правило Марковникова", "Принцип Ле Шателье", "Закон Авогадро"],
+    correct: 1
+  }
+];
+
+let quizScore = 0;
+let quizIndex = 0;
+
+function renderQuiz() {
+  const container = document.getElementById('quizContainer');
+  if (quizIndex >= quizQuestions.length) {
+    container.innerHTML = `
+      <div class="text-center p-6 bg-slate-950 rounded-xl space-y-3">
+        <div class="text-3xl">🎉</div>
+        <div class="text-lg font-bold text-white">Тест завершен!</div>
+        <div class="text-cyan-400 font-mono-chem font-bold text-xl">Ваш результат: ${quizScore} из ${quizQuestions.length}</div>
+        <button onclick="quizScore=0;quizIndex=0;renderQuiz()" class="px-4 py-2 bg-cyan-500 font-bold text-slate-950 text-xs rounded-xl">Пройти снова</button>
+      </div>
+    `;
+    return;
+  }
+
+  const item = quizQuestions[quizIndex];
+  container.innerHTML = `
+    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+      <div class="text-xs text-slate-400">Вопрос ${quizIndex + 1} из ${quizQuestions.length}:</div>
+      <div class="text-sm font-semibold text-white">${item.q}</div>
+      <div class="space-y-2">
+        ${item.options.map((opt, idx) => `
+          <button onclick="checkQuizAnswer(${idx})" class="w-full text-left text-xs p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition-all">
+            ${opt}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('trainerScore').innerText = `Счёт: ${quizScore} / ${quizQuestions.length}`;
+}
+
+function checkQuizAnswer(selected) {
+  if (selected === quizQuestions[quizIndex].correct) {
+    quizScore++;
+    alert("Правильно! 🎯");
+  } else {
+    alert("Неверно. Проверьте теоретический раздел Гл. 1!");
+  }
+  quizIndex++;
+  renderQuiz();
+}
+
+// ==================== 5. ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ (CANVAS) ====================
+let labAnimId = null;
+
+function runLabExperiment() {
+  const type = document.getElementById('labReactionSelect').value;
+  const temp = parseInt(document.getElementById('tempRange').value);
+  const canvas = document.getElementById('flaskCanvas');
+  const ctx = canvas.getContext('2d');
+  const status = document.getElementById('flaskStatus');
+
+  if (labAnimId) cancelAnimationFrame(labAnimId);
+
+  let frame = 0;
+  let particles = [];
+  
+  status.innerText = `Реакция запущена! Температура: ${temp}°C...`;
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Рисуем колбу (пробирку/колбу Вюрца)
+    ctx.strokeStyle = '#00ffc8';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(110, 40);
+    ctx.lineTo(110, 100);
+    ctx.lineTo(60, 190);
+    ctx.arcTo(60, 210, 80, 210, 15);
+    ctx.lineTo(220, 210);
+    ctx.arcTo(240, 210, 240, 190, 15);
+    ctx.lineTo(190, 100);
+    ctx.lineTo(190, 40);
+    ctx.stroke();
+
+    // Заполнение жидкостью
+    ctx.fillStyle = type === 'color' ? `rgba(180, 0, 255, ${Math.max(0.1, 0.8 - frame*0.005)})` : (type === 'sediment' ? 'rgba(0, 179, 255, 0.4)' : 'rgba(255, 255, 255, 0.15)');
+    ctx.beginPath();
+    ctx.moveTo(70, 180);
+    ctx.lineTo(230, 180);
+    ctx.lineTo(225, 200);
+    ctx.lineTo(75, 200);
+    ctx.closePath();
+    ctx.fill();
+
+    // Эффекты опытов
+    if (type === 'gas') {
+      // Пузырьки газа
+      if (frame % Math.max(1, 15 - Math.floor(temp/10)) === 0) {
+        particles.push({ x: 80 + Math.random()*140, y: 190, r: 2 + Math.random()*4, speed: 1 + temp/20 });
+      }
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      particles.forEach((p, i) => {
+        p.y -= p.speed;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fill();
+        if (p.y < 50) particles.splice(i, 1);
+      });
+    } else if (type === 'sediment') {
+      // Выпадение осадка Cu(OH)2
+      ctx.fillStyle = '#00b3ff';
+      const count = Math.min(60, frame);
+      for (let i = 0; i < count; i++) {
+        const x = 75 + (i * 13) % 150;
+        const y = 195 + (i % 3) * 3;
+        ctx.fillRect(x, y, 6, 4);
+      }
+    }
+
+    frame++;
+    if (frame < 300) {
+      labAnimId = requestAnimationFrame(animate);
+    } else {
+      status.innerText = "Эксперимент завершён. Наблюдаются устойчивые признаки реакции!";
+    }
+  }
+
+  animate();
+}
+
+// ==================== ВПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И ИНИЦИАЛИЗАЦИЯ ====================
+function switchTab(tabId) {
+  ['tab-predict', 'tab-trainer', 'tab-lab'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+    const btn = document.getElementById('btn-' + id);
+    if (btn) {
+      btn.className = "px-5 py-2.5 rounded-t-xl font-bold text-sm text-slate-400 hover:text-white transition-all";
+    }
+  });
+
+  document.getElementById(tabId).classList.remove('hidden');
+  const activeBtn = document.getElementById('btn-' + tabId);
+  if (activeBtn) {
+    activeBtn.className = "px-5 py-2.5 rounded-t-xl font-bold text-sm bg-cyan-500/20 text-cyan-400 border-t border-x border-cyan-500/40";
+  }
+
+  if (tabId === 'tab-lab') runLabExperiment();
+}
+
+// CANVAS ЧАСТИЦ ФОНА
+function initBackgroundParticles() {
+  const canvas = document.getElementById('particlesCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const pts = Array.from({ length: 35 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 2 + 1,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5,
+    color: Math.random() > 0.5 ? '#00ffc8' : '#b400ff'
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pts.forEach(p => {
+      p.x += p.dx;
+      p.y += p.dy;
+      if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.3;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ИНДИКАТОР СКРОЛЛА
+window.addEventListener('scroll', () => {
+  const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = (winScroll / height) * 100;
+  document.getElementById("progressBar").style.width = scrolled + "%";
+});
+
+// ТОЧКА ВХОДА ПРИ ЗАГРУЗКЕ
+window.onload = function() {
+  initBackgroundParticles();
+  renderReactionsTable(reactionsData);
+  renderApps();
+  renderQuiz();
+  runLabExperiment();
+};
+</script>
+</body>
+</html>
